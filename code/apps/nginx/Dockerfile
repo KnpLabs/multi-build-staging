@@ -1,3 +1,4 @@
 FROM nginx:1.27.1
 
-COPY staging.localhost.conf /etc/nginx/conf.d/staging.localhost.conf
+COPY php/app/public/    /usr/src/app/public/
+COPY nginx/default.conf /etc/nginx/conf.d/default.conf

@@ -2,11 +2,11 @@ services:
   traefik:
     image: traefik
     networks:
-      entrypoint: {}
+      - proxy
     command:
-      - "--api.insecure=true"
-      - "--providers.docker"
-      # other Traefik rules like https
+      - "--api.insecure=true" # Only for demo purposes
+      - "--providers.docker=true"
+      - "--providers.docker.exposedByDefault=false"
     ports:
       - "80:80"
       - "8080:8080"

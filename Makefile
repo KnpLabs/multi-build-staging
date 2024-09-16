@@ -1,4 +1,4 @@
-TAG := $(shell git rev-parse --abbrev-ref HEAD)
+TAG ?= $(shell git rev-parse --abbrev-ref HEAD)
 
 # Public targets
 .PHONY: init
@@ -8,25 +8,31 @@ init:
 	$(MAKE) .proxy-deploy
 	@echo "Environment initialized"
 
-.PHONY: deploy
-deploy:
-	@echo "Deploying the feature branch"
-	$(MAKE) .feature-branch-deploy
-	@echo "Feature branch deployed"
-
 .PHONY: destroy
 destroy:
-	@echo "Destroying the feature branch"
+	@echo "Destroying the environment"
 	$(MAKE) .feature-branch-destroy
 	$(MAKE) .proxy-destroy
 	$(MAKE) .networks-destroy
-	@echo "Feature branch destroyed"
+	@echo "Environment destroyed"
+
+.PHONY: deploy-stage
+deploy-stage:
+	@echo "Deploying the ${TAG} stage"
+	$(MAKE) .feature-branch-deploy
+	@echo "stage ${TAG} deployed"
+
+.PHONY: destroy-stage
+destroy-stage:
+	@echo "Destroying the ${TAG} stage"
+	$(MAKE) .feature-branch-destroy
+	@echo "Stage ${TAG} destroyed"
 
 # Networks
 .PHONY: .networks-init
 .networks-init:
 	@echo "Initializing networks"
-	@docker network create --driver overlay --attachable proxy
+	-@docker network create proxy
 	@echo "Networks initialized"
 
 .PHONY: .networks-destroy
@@ -66,25 +72,53 @@ destroy:
 .PHONY: .feature-branch-deploy
 .feature-branch-deploy:
 	@echo "Deploying the '${TAG}' feature branch"
+	$(MAKE) .feature-branch-init-environment-variables
 	$(MAKE) .feature-branch-build-images
 	$(MAKE) .feature-branch-push-images
 	$(MAKE) .feature-branch-start
+	$(MAKE) .feature-branch-database-init
+	$(MAKE) .feature-branch-database-migrations
+	$(MAKE) .feature-branch-database-load-fixtures
 	@echo "Feature branch '${TAG}' deployed"
+
+.PHONY: .feature-branch-init-environment-variables # out of the scope of the demo
+.feature-branch-init-environment-variables:
+	@echo "Initializing environment variables"
 
 .PHONY: .feature-branch-build-images
 .feature-branch-build-images:
 	@echo "Building feature branch's Docker images"
-	@docker-compose -f code/docker-compose.yaml -p $(TAG) build
+	@export TAG=$(TAG) && docker-compose -f code/docker-compose.yaml -p $(TAG) build
 
-.PHONY: .feature-branch-push-images
+.PHONY: .feature-branch-push-images # out of the scope of the demo
 .feature-branch-push-images:
 	@echo "Pushing feature branch's Docker images"
 
 .PHONY: .feature-branch-start
 .feature-branch-start:
 	@echo "Starting feature branch's stack"
-	@docker-compose -f code/docker-compose.yaml -p $(TAG) up -d
+	@export TAG=$(TAG) && docker-compose -f code/docker-compose.yaml -p $(TAG) up -d
+
+.PHONY: .feature-branch-database-init
+.feature-branch-database-init:
+	@echo "Initializing the feature branch's database"
+	@export TAG=$(TAG) && docker-compose -f code/docker-compose.yaml -p $(TAG) exec php bin/console doctrine:database:create --if-not-exists --no-interaction --quiet
+	@echo "Feature branch's database initialized"
+
+.PHONY: .feature-branch-database-migrations
+.feature-branch-database-migrations:
+	@echo "Executing migrations on the feature branch's database"
+	@export TAG=$(TAG) && docker-compose -f code/docker-compose.yaml -p $(TAG) exec php bin/console doctrine:migrations:migrate --no-interaction --quiet
+	@echo "Feature branch's migrations executed"
+
+.PHONY: .feature-branch-database-load-fixtures
+.feature-branch-database-load-fixtures:
+	@echo "Loading fixtures on the feature branch's database"
+	@export TAG=$(TAG) && docker-compose -f code/docker-compose.yaml -p $(TAG) exec php bin/console doctrine:fixtures:load --no-interaction --quiet
+	@echo "Feature branch's fixtures loaded"
 
 .PHONY: .feature-branch-destroy
 .feature-branch-destroy:
-	@docker-compose -f code/docker-compose.yaml down
+	@echo "Destroying the ${TAG} feature branch's stack"
+	@export TAG=$(TAG) && docker-compose -f code/docker-compose.yaml -p $(TAG) down
+	@echo "${TAG} feature branch's destroyed"

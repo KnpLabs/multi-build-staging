@@ -1,0 +1,29 @@
+{% extends "base.html.twig" %}
+
+{% block title %}KNPLabs{% endblock %}
+
+{% block body %}
+<div class="container">
+    <h1>KNPLabs</h1>
+    <table class="table">
+    <thead>
+        <tr>
+        <th scope="col">#</th>
+        <th scope="col">First</th>
+        <th scope="col">Last</th>
+        <th scope="col">GitHub</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+            <tr>
+                <th scope="row">{{ user.id }}</th>
+                <td>{{ user.first }}</td>
+                <td>{{ user.last }}</td>
+                <td><a href="{{ 'https://github.com/' ~ user.github }}">{{ user.github }}</a></td>
+            </tr>
+        {% endfor %}
+    </tbody>
+    </table>
+</div>
+{% endblock %}

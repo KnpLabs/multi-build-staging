@@ -1,24 +1,37 @@
 services:
   nginx:
     build:
-      context: apps/nginx
+      context: apps
+      dockerfile: nginx/Dockerfile
     restart: on-failure
     networks:
+      - default
       - proxy
+    depends_on:
+      php:
+        condition: service_started
     labels:
-      - traefik.http.routers.my-container.rule=Host(`${TAG}.staging.localhost`)
+      - traefik.enable=true
+      - traefik.http.routers.${TAG}-app.rule=Host(`${TAG}.staging.localhost`)
+      - traefik.docker.network=proxy
 
   php:
     build:
       context: apps/php
       target: php
     restart: on-failure
+    depends_on:
+      mysql:
+        condition: service_started
 
   mysql:
     build:
       context: apps/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
     restart: on-failure
 
 networks:
+  default: ~
   proxy:
     external: true
