@@ -11,7 +11,7 @@ init:
 .PHONY: destroy
 destroy:
 	@echo "Destroying the environment"
-	$(MAKE) .feature-branch-destroy
+	$(MAKE) destroy-stages
 	$(MAKE) .proxy-destroy
 	$(MAKE) .networks-destroy
 	@echo "Environment destroyed"
@@ -20,7 +20,13 @@ destroy:
 deploy-stage:
 	@echo "Deploying the ${TAG} stage"
 	$(MAKE) .feature-branch-deploy
-	@echo "stage ${TAG} deployed"
+	@echo "Stage ${TAG} deployed"
+
+.PHONY: destroy-stages
+destroy-stages:
+	@echo "Destroying all stages"
+	@docker container ls --filter "label=stage" --format="{{.Labels}}" | sed -un "s/^.*stage=\([^,]*\).*$$/\1/p" | xargs --no-run-if-empty -L1 -I {} $(MAKE) destroy-stage TAG={}
+	@echo "All stages destroyed"
 
 .PHONY: destroy-stage
 destroy-stage:

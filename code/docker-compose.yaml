@@ -11,6 +11,7 @@ services:
       php:
         condition: service_started
     labels:
+      - stage=${TAG}
       - traefik.enable=true
       - traefik.http.routers.${TAG}-app.rule=Host(`${TAG}.staging.localhost`)
       - traefik.docker.network=proxy
@@ -22,13 +23,18 @@ services:
     restart: on-failure
     depends_on:
       mysql:
-        condition: service_started
+        condition: service_healthy
 
   mysql:
     build:
       context: apps/mysql
     environment:
       MYSQL_ROOT_PASSWORD: root
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     restart: on-failure
 
 networks:
