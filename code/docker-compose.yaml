@@ -1,0 +1,24 @@
+services:
+  nginx:
+    build:
+      context: apps/nginx
+    restart: on-failure
+    networks:
+      - proxy
+    labels:
+      - traefik.http.routers.my-container.rule=Host(`${TAG}.staging.localhost`)
+
+  php:
+    build:
+      context: apps/php
+      target: php
+    restart: on-failure
+
+  mysql:
+    build:
+      context: apps/mysql
+    restart: on-failure
+
+networks:
+  proxy:
+    external: true

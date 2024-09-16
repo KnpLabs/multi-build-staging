@@ -1,0 +1,18 @@
+services:
+  traefik:
+    image: traefik
+    networks:
+      entrypoint: {}
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker"
+      # other Traefik rules like https
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+
+networks:
+  proxy:
+    external: true
