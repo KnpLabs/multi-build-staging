@@ -19,6 +19,9 @@ class AppFixtures extends Fixture
         $brice = new KNPeer('Brice', 'Correia', 'bricecorreia');
         $manager->persist($brice);
 
+        $arthur = new KNPeer('Arthur', 'Lebec', 'Arthurlbc');
+        $manager->persist($arthur);
+
         $manager->flush();
     }
 }
